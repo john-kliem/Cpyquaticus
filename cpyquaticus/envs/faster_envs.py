@@ -132,7 +132,12 @@ class Cpyquaticus(ParallelEnv):
             row_ptr = c_observations[i]  # Dereference the row pointer
             observations['agent_'+str(i)] = []
             for j in range(self.obs_length):  
-                observations['agent_'+str(i)].append(row_ptr[j])
+                val = row_ptr[j]
+                if val < -1:
+                    val = -1
+                elif val > 1:
+                    val = 1
+                observations['agent_'+str(i)].append(val)
                 #print(row_ptr[j], end=", ")  # Dereference and print each float value
         # for i in range(num_agents):  # Loop through rows
         # row_ptr = matrix_ptr[i]  # Dereference row pointer
