@@ -15,12 +15,14 @@ class Cpyquaticus(ParallelEnv):
         self.num_teams = num_teams
         self.num_steps = num_steps
         self.render = render
+        self.render_mode = render
         self.agents = ['agent_'+str(agent_id) for agent_id in range(num_agents)]
         self.possible_agents = self.agents[:]
         self.observation_spaces = {}
         self.action_spaces = {}
         self.normalized = normalized
         self.obs_length = None
+        
         if obs_type == 'real':
             self.obs_length = 8 * len(self.agents)
         elif obs_type == 'relative':
@@ -33,6 +35,9 @@ class Cpyquaticus(ParallelEnv):
         self.cpyquaticus = load_cpyquaticus()
         self.observation_spaces = {agent_id: spaces.Box(-1,1, shape=(self.obs_length,) ) for agent_id in self.agents}
         self.action_spaces = {agent_id: spaces.Discrete(17) for agent_id in self.agents}
+        self.observation_space = self.observation_spaces['agent_0']
+        self.action_space = self.action_spaces['agent_0']
+
         # self.game = self.cpyquaticus.create_game(self.field_width, self.field_height, len(self.agents), self.num_teams, self.num_steps)
         # self.episode = self.cpyquaticus.create_episode(self.game)
 

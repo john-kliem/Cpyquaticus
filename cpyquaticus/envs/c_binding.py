@@ -6,7 +6,7 @@ from structures import team_rewards, agent_rewards, PID, USV, real_obs, flag, ac
 # Loads in the the c methods
 def load_cpyquaticus():
     try:
-        cpyquaticus = ctypes.CDLL("./cpyquaticus.dylib")
+        cpyquaticus = ctypes.CDLL("./cpyquaticus.so")
     except OSError as e:
         raise RuntimeError(f"Failed to load shared library: {e}")
 

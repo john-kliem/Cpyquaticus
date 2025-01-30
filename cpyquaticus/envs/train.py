@@ -71,7 +71,7 @@ if __name__ == '__main__':
     
     env_creator = lambda config: Cpyquaticus()
     env = ParallelPettingZooWrapper(Cpyquaticus())
-    register_env('pyquaticus', lambda config: ParallelPettingZooWrapper(env_creator(config)))
+    register_env('cpyquaticus', lambda config: ParallelPettingZooWrapper(env_creator(config)))
     obs_space = env.observation_space['agent_0']
     act_space = env.action_space['agent_0']
     def policy_mapping_fn(agent_id, episode, worker, **kwargs):
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                 #'easy-attack-policy': (AttackGen(3, Team.RED_TEAM, 'easy', 2, env.par_env.agent_obs_normalizer), obs_space, act_space, {})}
     env.close()
     #Not using the Alpha Rllib (api_stack False) 
-    ppo_config = PPOConfig().api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False).environment(env='pyquaticus').env_runners(num_env_runners=1, num_cpus_per_env_runner=1)
+    ppo_config = PPOConfig().api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False).environment(env='cpyquaticus').env_runners(num_env_runners=10, num_cpus_per_env_runner=1)
     #If your system allows changing the number of rollouts can significantly reduce training times (num_rollout_workers=15)
     ppo_config.multi_agent(policies=policies, policy_mapping_fn=policy_mapping_fn, policies_to_train=["agent-0-policy"],)
     algo = ppo_config.build()
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     end = 0
     start = time.time()
     for i in range(10000):
-        
+        print("Itr: ", i, flush=True)
         algo.train()
         
         if np.mod(i, 500) == 0:
