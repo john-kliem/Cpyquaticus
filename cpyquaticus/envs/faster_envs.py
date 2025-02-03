@@ -8,20 +8,22 @@ import copy
 class Cpyquaticus(ParallelEnv):
     metadata = {"render.modes": ["human",], "name": "cpyquaticus_v0"}
 
-    def __init__(self, field_width=160, field_height=80, num_agents=2, num_teams=2, num_steps=1000, obs_type='real', normalized=True, render=None):
+    def __init__(self, field_width=160, field_height=80, num_agents=2, num_teams=2, num_steps=1000, obs_type='real', normalized=True, render=None, c_load = 'mac'):
         super().__init__()
         self.field_width = field_width
         self.field_height = field_height
         self.num_teams = num_teams
         self.num_steps = num_steps
+        self.starting_size = num_agents
         self.render = render
         self.render_mode = render
-        self.agents = ['agent_'+str(agent_id) for agent_id in range(num_agents)]
+        self.agents = ['agent_'+str(agent_id) for agent_id in range(self.starting_size)]
         self.possible_agents = self.agents[:]
         self.observation_spaces = {}
         self.action_spaces = {}
         self.normalized = normalized
         self.obs_length = None
+        self.c_load = c_load
         
         if obs_type == 'real':
             self.obs_length = 8 * len(self.agents)
@@ -32,11 +34,11 @@ class Cpyquaticus(ParallelEnv):
         self.cpyquaticus = None
         self.steps = 0
         self.max_steps = 10 * 240 # 4 minute fixed game
-        self.cpyquaticus = load_cpyquaticus()
-        self.observation_spaces = {agent_id: spaces.Box(-1,1, shape=(self.obs_length,) ) for agent_id in self.agents}
+        self.cpyquaticus = load_cpyquaticus(c_load)
+        self.observation_spaces = {agent_id: spaces.Box(-1,1, shape=(self.obs_length,),dtype=np.float32) for agent_id in self.agents}
         self.action_spaces = {agent_id: spaces.Discrete(17) for agent_id in self.agents}
-        self.observation_space = self.observation_spaces['agent_0']
-        self.action_space = self.action_spaces['agent_0']
+        # self.observation_space = self.observation_spaces['agent_0']
+        # self.action_space = self.action_spaces['agent_0']
 
         # self.game = self.cpyquaticus.create_game(self.field_width, self.field_height, len(self.agents), self.num_teams, self.num_steps)
         # self.episode = self.cpyquaticus.create_episode(self.game)
@@ -73,13 +75,16 @@ class Cpyquaticus(ParallelEnv):
         #Unpack C Reward Structures
         for i in range(self.num_teams):
             team_rews[i] = self.game.contents.rewards[i].contents #.team_rewards[i].contents.contents
-            agent_rews['agent_0'] = self.episode.contents.rewards[i].contents#.agent_rewards[i].contents.contents
-        for agent_id in agent_rews:
+        
+        for agent_id in self.agents:
+            
             team = 1 if self.agents.index(agent_id) >= self.num_agents/2 else 0
+            agent_rews = self.episode.contents.rewards[int(agent_id[-1])].contents
+            # rewards += team_rews[team]
             rewards[agent_id] = 0.0
-            if agent_rews[agent_id].got_tagged:
+            if agent_rews.got_tagged:
                 rewards[agent_id] += -1.0
-            if agent_rews[agent_id].oob:
+            if agent_rews.oob:
                 rewards[agent_id] += -1.0
             if team_rews[team].team_grab:
                 rewards[agent_id] += 0.5
@@ -89,11 +94,12 @@ class Cpyquaticus(ParallelEnv):
     def reset(self, seed=None, options=None):
         if not (self.game == None):
             self.close()
-        self.game = self.cpyquaticus.create_game(self.field_width, self.field_height, len(self.agents), self.num_teams, self.max_steps, 1)
+        self.game = self.cpyquaticus.create_game(self.field_width, self.field_height, self.starting_size, self.num_teams, self.max_steps, 1)
         self.episode = self.cpyquaticus.create_episode(self.game)
         self.steps = 0
         self.max_steps = 10 * 240 #4 Minute game
         self.cpyquaticus.initialize_game_starts(self.game, self.episode)
+        self.agents = ['agent_'+str(agent_id) for agent_id in range(self.starting_size)]
         observations = self.get_agent_observations()
         return observations,{agent_id:{} for agent_id in self.agents}
     def step(self, actions):
@@ -108,21 +114,27 @@ class Cpyquaticus(ParallelEnv):
         terminateds = {}
         truncateds = {}
         infos = {}
+        remove = []
         for agent_id in self.agents:
             infos[agent_id] = {}
             if self.steps >= self.max_steps:
                 terminateds[agent_id] = True
                 truncateds[agent_id] = True 
+                if agent_id in self.agents:
+                    remove.append(agent_id)
+                
             else:
                 terminateds[agent_id] = False
                 truncateds[agent_id] = False 
+        for a in remove:
+            self.agents.remove(a)
         return observations, rewards, terminateds, truncateds, infos
     def render(self):
         return
     def close(self):
         self.cpyquaticus.free_game(self.game)
         self.game = None
-        self.cpyquaticus.free_episode(self.episode, len(self.agents))
+        self.cpyquaticus.free_episode(self.episode, self.starting_size)
         self.episode = None
         return
     def get_agent_observations(self,):
@@ -135,6 +147,7 @@ class Cpyquaticus(ParallelEnv):
         index = 0
         for i in range(self.num_agents):  
             row_ptr = c_observations[i]  # Dereference the row pointer
+            
             observations['agent_'+str(i)] = []
             for j in range(self.obs_length):  
                 val = row_ptr[j]
@@ -142,7 +155,7 @@ class Cpyquaticus(ParallelEnv):
                     val = -1
                 elif val > 1:
                     val = 1
-                observations['agent_'+str(i)].append(val)
+                observations['agent_'+str(i)].append(np.array(val))
                 #print(row_ptr[j], end=", ")  # Dereference and print each float value
         # for i in range(num_agents):  # Loop through rows
         # row_ptr = matrix_ptr[i]  # Dereference row pointer

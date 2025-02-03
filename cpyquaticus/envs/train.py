@@ -61,13 +61,13 @@ class ParallelPettingZooWrapper(ParallelPettingZooEnv):
         # pass empty info just to align with RLlib code
     def render(self):
         return self.par_env.render()
+
+
 if __name__ == '__main__':
     #Competitors: reward_config should be updated to reflect how you want to reward your learning agent
     
     logging.basicConfig(level=logging.ERROR)
 
-    
-    
     
     env_creator = lambda config: Cpyquaticus()
     env = ParallelPettingZooWrapper(Cpyquaticus())
