@@ -29,10 +29,10 @@ class DoNothing:
 from typing import Optional
 import copy
 
-def env_creator():
-    env = Cpyquaticus(c_load='mac')
+#def env_creator():
+#    env = Cpyquaticus(c_load='linux')
     # env = pufferlib.wrappers.PettingZooTruncatedWrapper(env)
-    return pufferlib.emulation.PettingZooPufferEnv(env=env)
+#    return pufferlib.emulation.PettingZooPufferEnv(env=env)
 
 import pufferlib.emulation
 import pufferlib.wrappers
@@ -115,16 +115,32 @@ def emulate_action_space(space):
 #     def thunk():
 def env_creator():
     def thunk():
-        env = Cpyquaticus()
+        env = Cpyquaticus(c_load='linux')
         env = pufferlib.wrappers.PettingZooTruncatedWrapper(env=env)
         return pufferlib.emulation.PettingZooPufferEnv(env=env)
     return thunk()
 
-env = pufferlib.wrappers.PettingZooTruncatedWrapper(env=Cpyquaticus())
+env = pufferlib.wrappers.PettingZooTruncatedWrapper(env=Cpyquaticus(c_load='linux'))
 single_obs_space, dtype = emulate_observation_space(env.observation_space(env.possible_agents[0]))
 print("Single_obs: ", single_obs_space, " Dtype: ", dtype)
 single_act_space, adtype = emulate_action_space(env.action_space(env.possible_agents[0]))
 print("Single_obs: ", single_act_space, " Dtype: ", adtype)
+print("Emulated Obs: ", single_obs_space is not env.observation_space('agent_0'))
+print("Emulated Action: ", single_act_space is not env.action_space('agent_0'))
+emulated = pufferlib.namespace(
+            observation_dtype = single_obs_space.dtype,
+            emulated_observation_dtype = dtype,
+        )
+print("Emulated: ", emulated)
+print("Num agents: ", len(self.possible_agents))
+
+
+
+#if isinstance(self.env.observation_space, pufferlib.spaces.Box):
+#            self.obs_struct = self.observations
+#        else:
+#            self.obs_struct = self.observations.view(self.obs_dtype)
+
 # vec_env = pufferlib.vector.make(env_creator, num_envs=2, num_workers=1, backend = pufferlib.vector.Multiprocessing)
 
 # obs, _ = env.reset()

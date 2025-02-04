@@ -36,7 +36,7 @@ class Cpyquaticus(ParallelEnv):
         self.max_steps = 10 * 240 # 4 minute fixed game
         self.cpyquaticus = load_cpyquaticus(c_load)
         self.observation_spaces = {agent_id: spaces.Box(-1,1, shape=(self.obs_length,),dtype=np.float32) for agent_id in self.agents}
-        self.action_spaces = {agent_id: spaces.Discrete(17) for agent_id in self.agents}
+        self.action_spaces = {agent_id: spaces.Discrete(18) for agent_id in self.agents}
         # self.observation_space = self.observation_spaces['agent_0']
         # self.action_space = self.action_spaces['agent_0']
 
@@ -101,6 +101,7 @@ class Cpyquaticus(ParallelEnv):
         self.cpyquaticus.initialize_game_starts(self.game, self.episode)
         self.agents = ['agent_'+str(agent_id) for agent_id in range(self.starting_size)]
         observations = self.get_agent_observations()
+        #print("Obs: ", observations)
         return observations,{agent_id:{} for agent_id in self.agents}
     def step(self, actions):
         if self.game == None or self.episode == None:
@@ -155,7 +156,7 @@ class Cpyquaticus(ParallelEnv):
                     val = -1
                 elif val > 1:
                     val = 1
-                observations['agent_'+str(i)].append(np.array(val))
+                observations['agent_'+str(i)].append(val)
                 #print(row_ptr[j], end=", ")  # Dereference and print each float value
         # for i in range(num_agents):  # Loop through rows
         # row_ptr = matrix_ptr[i]  # Dereference row pointer

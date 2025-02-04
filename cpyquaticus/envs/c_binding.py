@@ -6,7 +6,7 @@ from structures import team_rewards, agent_rewards, PID, USV, real_obs, flag, ac
 # Loads in the the c methods
 def load_cpyquaticus(c_file=None):
     try:
-        if c_file == None:
+        if c_file == None or c_file == 'linux':
             cpyquaticus = ctypes.CDLL("./cpyquaticus.so")
         else:
             cpyquaticus = ctypes.CDLL("./cpyquaticus.dylib")
