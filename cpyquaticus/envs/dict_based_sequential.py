@@ -10,6 +10,8 @@ class SequentialMultiEnv(ParallelEnv):
         :param env_fns: A list of callables that create PettingZoo environments.
         """
         self.envs = [e() for e in envs]
+        # self.e_lengths = [0 for e in range(envs]
+        # self.r_values = [0 for e in envs]
         self.num_envs = len(self.envs)
         self.env_pos = 0  # Tracks which env is active
         #print(self.envs[0])
@@ -31,7 +33,7 @@ class SequentialMultiEnv(ParallelEnv):
             obs, info = env.reset()
             obs_temp = []
             infos.append(info)
-            observations.apend(obs)
+            observations.append(obs)
         return np.array(observations), np.array(infos)
     def convert_to_dict(self, action):
         obs_dict = {}
@@ -68,9 +70,13 @@ class SequentialMultiEnv(ParallelEnv):
         terminations = []
         infos = []
         reset_env = []
+        final_infos = {}
         for e in range(self.num_envs):
             if e not in self.resets:
                 obs, rew, trunc, term, info = self.envs[e].step(self.convert_to_dict(actions[e]))
+                if trunc[self.possible_agents[0]] or term[self.possible_agents[0]]:
+                    reset_env.append(e)
+                    #final_infos['final_info'] = {'episode':{'l':, 'r':0}}
             else:
                 obs, info = self.reset_env(e)
                 term = {}
@@ -80,12 +86,14 @@ class SequentialMultiEnv(ParallelEnv):
                     rew[a] = 0
                     term[a] = False
                     trunc[a] = False
-            observations.append(np.array(obs))
-            rewards.append(np.array(temp_rews))
-            terminations.append(np.array(term))
-            truncations.append(np.array(trunc))
+            observations.append(obs)
+            rewards.append(rew)
+            terminations.append(term)
+            truncations.append(trunc)
             infos.append(info)
         self.resets = reset_env
+
+        #{'agent info': infos, 'episode':{'r':,'l':0}
         return np.array(observations), np.array(rewards), np.array(terminations), np.array(truncations), np.array(infos)
 
     def render(self):

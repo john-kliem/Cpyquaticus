@@ -1,6 +1,6 @@
 import ctypes
 import numpy as np
-from structures import team_rewards, agent_rewards, PID, USV, real_obs, flag, action, settings, episode
+from structures import team_rewards, agent_rewards, PID, USV, real_obs, flag, action, settings, episode, Flag, Player
 
 
 # Loads in the the c methods
@@ -125,4 +125,6 @@ def load_cpyquaticus(c_file=None):
     cpyquaticus.get_observations.restype = ctypes.POINTER(ctypes.POINTER(ctypes.c_float))
 
     #End cpyquaticus.c
+
+
     return cpyquaticus

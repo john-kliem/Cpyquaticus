@@ -14,13 +14,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 @dataclass
 class PPOArgs:
-    total_timesteps: int = 500000
+    total_timesteps: int = None
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 4
+    num_envs: int = None
     """the number of parallel game environments"""
-    num_steps: int = 128
+    num_steps: int = None
     """the number of steps to run in each environment per policy rollout"""
     anneal_lr: bool = True
     """Toggle learning rate annealing for policy and value networks"""
@@ -54,7 +54,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
-class Agent(nn.Module):
+class PPOAgent(nn.Module):
     def __init__(self, observation_space, action_space):
         super().__init__()
         self.critic = nn.Sequential(
@@ -84,22 +84,28 @@ class Agent(nn.Module):
 
 
 class PPO:
-    def __init__(self, agent,config, observation_space, action_space):
+    def __init__(self, agent,config, observation_space, action_space, device):
+        self.device = device
         self.config = config
         self.observation_space = observation_space
         self.action_space = action_space
         self.network = agent(observation_space, action_space)
-        self.optimizer = optim.Adam(self.agent.parameters(), lr=self.config.learning_rate, eps=1e-5)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=self.config.learning_rate, eps=1e-5)
 
         #Create Buffers Used For Training
-        self.observations = torch.zeros((self.config.num_steps, self.config.num_envs)+self.observation_space.shape),to(device)
-        self.actions = torch.zeros((self.config.num_steps, self.config.num_envs) + self.single_action_space.shape).to(device)
+        #print("shapes: ", self.config.num_steps)
+        self.observations = torch.zeros((self.config.num_steps, self.config.num_envs)+self.observation_space.shape).to(device)
+        self.actions = torch.zeros((self.config.num_steps, self.config.num_envs) + self.action_space.shape).to(device)
         self.logprobs = torch.zeros((self.config.num_steps, self.config.num_envs)).to(device)
         self.rewards = torch.zeros((self.config.num_steps, self.config.num_envs)).to(device)
         self.dones = torch.zeros((self.config.num_steps, self.config.num_envs)).to(device)
         self.values = torch.zeros((self.config.num_steps, self.config.num_envs)).to(device) 
         self.buffer_step = 0
         
+        #Start Game Buffers
+        self.returns = None
+        self.advantages = None
+
         #Vars Used in Tracking
         self.explained_var = np.nan
         self.v_loss = np.nan
@@ -111,45 +117,61 @@ class PPO:
 
     def get_value(self, x):
         return self.network.get_value(x)
-    def get_action_and_value(self, x, action=None):
-        return self.network.get_action_and_value(x, action)
-    def get_action_and_value_train(self, x, rew, term, trunc, info, action=None):
+    def get_action_and_value(self, obs, action=None):
+        return self.network.get_action_and_value(obs, action)
+    def get_action_and_value_train(self, obs, done, action=None):
         #TODO: Might need to flatten x before passing into get_action_and_value
-        action, logprob, entropy, critic = self.get_action_and_value(x, action)
-        self.observations[self.buffer_step] = x
+        obs = torch.tensor(obs).to(self.device)
+        self.observations[self.buffer_step] = obs
+        self.dones[self.buffer_step] = torch.tensor(done).to(self.device)
+        action, logprob, entropy, value = self.get_action_and_value(obs, action)
         self.actions[self.buffer_step] = action
         self.logprobs[self.buffer_step] = logprob
-        self.entropy[self.buffer_step] = entropy
-        self.critic[self.buffer_step] = critic
+        self.values[self.buffer_step] = value.flatten()
+        return action, logprob, entropy, value
+    def set_reward(self, reward):
+        self.rewards[self.buffer_step] = torch.tensor(reward).to(self.device).view(-1)
         self.buffer_step += 1
-        return action, logprob, entropy, critic
-    def train(self, batch):
-        #TODO: Understand Bootstrap
-        # Bootstrap value if not done
+        return
+    def anneal_lr(self, iteration, num_iterations):
+        if self.config.anneal_lr:
+            frac = 1.0 - (iteration - 1.0) / num_iterations
+            lrnow = frac * self.config.learning_rate
+            self.optimizer.param_groups[0]['lr'] = lrnow
+        return
+    def bootstrap(self, num_steps, next_obs, next_done):
         with torch.no_grad():
-            next_value = agent.get_value(next_obs).reshape(1, -1)
-            advantages = torch.zeros_like(rewards).to(device)
+            next_obs = torch.tensor(next_obs).to(self.device)
+            #next_done = torch.tensor(next_done).to(self.device)
+            next_value = self.get_value(next_obs).reshape(1, -1)
+            self.advantages = torch.zeros_like(self.rewards).to(self.device)
             lastgaelam = 0
-            for t in reversed(range(args.num_steps)):
-                if t == args.num_steps - 1:
+            for t in reversed(range(num_steps)):
+                if t == num_steps - 1:
                     nextnonterminal = 1.0 - next_done
                     nextvalues = next_value
                 else:
-                    nextnonterminal = 1.0 - dones[t + 1]
-                    nextvalues = values[t + 1]
-                delta = rewards[t] + args.gamma * nextvalues * nextnonterminal - values[t]
-                advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * nextnonterminal * lastgaelam
-            returns = advantages + values
+                    nextnonterminal = 1.0 - self.dones[t + 1]
+                    nextvalues = self.values[t + 1]
+                delta = self.rewards[t] + self.config.gamma * nextvalues * nextnonterminal - self.values[t]
+                self.advantages[t] = lastgaelam = delta + self.config.gamma * self.config.gae_lambda * nextnonterminal * lastgaelam
+            self.returns = self.advantages + self.values
+        return
+    def train(self, batch):
+        #TODO: Understand Bootstrap
+        if self.returns == None:
+            assert "Bootstrap Value First"
+        #assert isinstance(self.returns, None), "Bootstrap Value First"
         # Flatten the batch
-        b_obs = observations.reshape((-1,) + self.observation_space.shape)
-        b_logprobs = logprobs.reshape(-1)
-        b_actions = actions.reshape((-1,) + self.action_space.shape)
-        b_advantages = advantages.reshape(-1)
-        b_returns = returns.reshape(-1)
-        b_values = values.reshape(-1)
-        
+        b_obs = self.observations.reshape((-1,) + self.observation_space.shape)
+        b_logprobs = self.logprobs.reshape(-1)
+        b_actions = self.actions.reshape((-1,) + self.action_space.shape)
+        b_advantages = self.advantages.reshape(-1)
+        b_returns = self.returns.reshape(-1)
+        b_values = self.values.reshape(-1)
+
         # Optimizing the policy and value network
-        
+        clipfracs = []
         _, newlogprob, entropy, newvalue = self.network.get_action_and_value(b_obs[batch], b_actions.long()[batch])
         logratio = newlogprob - b_logprobs[batch]
         ratio = logratio.exp()
@@ -185,14 +207,13 @@ class PPO:
 
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.agent.parameters(), self.config.max_grad_norm)
+        nn.utils.clip_grad_norm_(self.network.parameters(), self.config.max_grad_norm)
         self.optimizer.step()
         
         #Save variables for plotting
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
         self.explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
-        
         self.v_loss = v_loss
         self.pg_loss = pg_loss
         self.entropy_loss = entropy_loss
@@ -202,3 +223,7 @@ class PPO:
         return 
     def get_plotting_vars(self, ):
         return self.explained_var, self.v_loss, self.pg_loss, self.entropy_loss, self.old_approx_kl, self.approx_kl, self.clipfracs
+    def save(self, path):
+        torch.save(self.network.state_dict(), path)
+    def load(self, path):
+        self.network.load_state_dict(torch.load(path,map_location=self.device))

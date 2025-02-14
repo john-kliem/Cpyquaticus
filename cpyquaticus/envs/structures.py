@@ -117,4 +117,19 @@ class episode(ctypes.Structure):
     ]
 #End cpyquaticus.c structs
 
+
+#Start render_test.h
+class Player(ctypes.Structure):
+    _fields_ = [
+        ("x", ctypes.c_float), 
+        ("y", ctypes.c_float),  
+        ("heading", ctypes.c_float)
+    ]
+class Flag(ctypes.Structure):
+    _fields_ = [
+        ("x", ctypes.c_float), 
+        ("y", ctypes.c_float),  
+    ]
+#End render_test.h
+
 ## End of required structures
