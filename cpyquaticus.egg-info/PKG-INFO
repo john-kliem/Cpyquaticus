@@ -1,0 +1,23 @@
+Metadata-Version: 2.2
+Name: cpyquaticus
+Version: 0.0.post1.dev8+g4918d2e.d20250217
+Summary: Super lightweight pyquaticus Environment to run in C (20 Environments on one core ~10k steps per second on mac book pro)
+Author-email: John Kliem <john.kliem3.civ@us.navy.mil>
+Project-URL: repository, https://github.com/mit-ll-trusted-autonomy/pyquaticus
+Classifier: Development Status :: 4 - Beta
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Requires-Python: <=3.12,>=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: matplotlib==3.7.1
+Requires-Dist: numpy==1.24.3
+Requires-Dist: pettingzoo==1.24.3
+Requires-Dist: pygame==2.4.0
+Requires-Dist: scipy==1.14.1
+Requires-Dist: stable-baselines3
+Requires-Dist: torch>=1.12.1
+Requires-Dist: tyro>=0.5.10
+Requires-Dist: gymnasium==0.29.0
+Requires-Dist: tensorboard>=2.10.0

@@ -1,0 +1,11 @@
+numpy
+matplotlib==3.7.1
+numpy==1.24.3
+pettingzoo==1.24.3
+pygame==2.4.0
+scipy==1.14.1
+stable-baselines3
+torch>=1.12.1
+tyro>=0.5.10
+gymnasium==0.29.0
+tensorboard>=2.10.0

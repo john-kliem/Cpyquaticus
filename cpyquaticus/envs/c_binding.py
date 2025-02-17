@@ -1,15 +1,15 @@
 import ctypes
 import numpy as np
-from structures import team_rewards, agent_rewards, PID, USV, real_obs, flag, action, settings, episode, Flag, Player
-
+from cpyquaticus.envs.structures import team_rewards, agent_rewards, PID, USV, real_obs, flag, action, settings, episode, Flag, Player
+import os
 
 # Loads in the the c methods
 def load_cpyquaticus(c_file=None):
     try:
         if c_file == None or c_file == 'linux':
-            cpyquaticus = ctypes.CDLL("./cpyquaticus.so")
+            cpyquaticus = ctypes.CDLL(os.path.dirname(__file__)+"/cpyquaticus.so")
         else:
-            cpyquaticus = ctypes.CDLL("./cpyquaticus.dylib")
+            cpyquaticus = ctypes.CDLL(os.path.dirname(__file__)+"/cpyquaticus.dylib")
     except OSError as e:
         raise RuntimeError(f"Failed to load shared library: {e}")
 

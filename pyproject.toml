@@ -1,0 +1,52 @@
+#This is a modification of pyquaticus to run in c for training not all features are ported over yet
+#Check out the better python based environment here: https://github.com/mit-ll-trusted-autonomy/pyquaticus
+
+[build-system]
+requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cpyquaticus"
+description = "Super lightweight pyquaticus Environment to run in C (20 Environments on one core ~10k steps per second on mac book pro)\n based on https://github.com/mit-ll-trusted-autonomy/pyquaticus"
+dynamic = ["version"]
+authors = [
+	{ name = "John Kliem",      email = "john.kliem3.civ@us.navy.mil"},
+]
+readme = "README.md"
+urls = { repository = "https://github.com/mit-ll-trusted-autonomy/pyquaticus" }
+requires-python = ">=3.10,<=3.12"
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3 :: Only",
+]
+license = { file = "LICENSE" }
+# Requirements
+dependencies = [
+	"numpy",
+	"matplotlib==3.7.1",
+	"numpy==1.24.3",
+	"pettingzoo==1.24.3",
+	"pygame==2.4.0",
+	"scipy==1.14.1",
+	"stable-baselines3",
+	"torch>=1.12.1",
+	"tyro>=0.5.10",
+	"gymnasium==0.29.0",
+	"tensorboard>=2.10.0"
+]
+
+
+[tool.setuptools.packages.find]
+include = ["cpyquaticus"]
+namespaces = false
+
+[tool.setuptools_scm]
+# For smarter version schemes and other configuration options,
+# check out https://github.com/pypa/setuptools_scm
+version_scheme = "no-guess-dev"
+write_to = "cpyquaticus/_version.py"
+
+[tool.setuptools]
+zip-safe = false
