@@ -14,11 +14,9 @@ cd into Cpyquaticus
 pip install -e .
 
 ## Training ##
-Clone RL Training Library:
-git clone https://grimyRL
-Follow installation steps on the grimyRL library page
 cd into the Cpyquaticus rl_test folder
 Run: 
+mkdir CleanMulti
 python petting_zoo_ppo_train.py
 
 

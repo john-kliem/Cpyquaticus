@@ -315,7 +315,7 @@ void step(settings* game, episode * e, int * actions){
                     heading_diff = (angle_diff < 0) ? -175.0f : 175.0f;
                 }
                 if (i==1){
-                move_heron(e->agents[i], 0.5/4, angle180(heading_diff));
+                move_heron(e->agents[i], 0.5, angle180(heading_diff));
                 }
                 else{
                 move_heron(e->agents[i], 0.5, angle180(heading_diff)); 
@@ -323,7 +323,7 @@ void step(settings* game, episode * e, int * actions){
             }
             else{
                 if(i==1){
-                    move_heron(e->agents[i], speed/4, angle180(heading));
+                    move_heron(e->agents[i], speed, angle180(heading));
                 }
                 else{
                     move_heron(e->agents[i], speed, angle180(heading));
@@ -358,7 +358,6 @@ void initialize_game_starts(settings * game, episode * e){
             game->flags[i]->pos[1] = height/2;
         }
     }
-
     //Assign Player Starting Positions
     //TODO: Check to make sure player isn't put on team flag spawn
     int i2 = game->num_agents/2;
