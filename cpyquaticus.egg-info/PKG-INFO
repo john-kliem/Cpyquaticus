@@ -1,6 +1,6 @@
 Metadata-Version: 2.2
 Name: cpyquaticus
-Version: 0.0.post1.dev8+g4918d2e.d20250217
+Version: 0.0.post1.dev13+g9196d03.d20250218
 Summary: Super lightweight pyquaticus Environment to run in C (20 Environments on one core ~10k steps per second on mac book pro)
 Author-email: John Kliem <john.kliem3.civ@us.navy.mil>
 Project-URL: repository, https://github.com/mit-ll-trusted-autonomy/pyquaticus
@@ -21,3 +21,26 @@ Requires-Dist: torch>=1.12.1
 Requires-Dist: tyro>=0.5.10
 Requires-Dist: gymnasium==0.29.0
 Requires-Dist: tensorboard>=2.10.0
+
+## Cpyquaticus ##
+This code is an implementation of a  basic MCTF game in c taken from Pyquaticus Simulation Library. 
+For all the nice features and custom relative observation space use: https://github.com/mit-ll-trusted-autonomy/pyquaticus 
+
+This Library allows high amounts of environment sampling (On one macbook pro ARM2 core you can achieve 10k steps per second)
+
+### Limitations ###
+Currently, this only allows for the normalized or unnormalized actual positions in the observations space, which, which currently does not include relative observation support (TODO).
+
+## Installation ##
+
+Clone the repository
+cd into Cpyquaticus
+pip install -e .
+
+## Training ##
+cd into the Cpyquaticus rl_test folder
+Run: 
+mkdir CleanMulti
+python petting_zoo_ppo_train.py
+
+
