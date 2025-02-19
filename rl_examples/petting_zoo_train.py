@@ -81,7 +81,7 @@ def make_env(env_id, idx, capture_video, run_name):
 
 def make_cpyquaticus_env():
     def thunk():
-        env = Cpyquaticus(num_steps=600,c_load='mac')
+        env = Cpyquaticus(num_steps=600,c_load='linux')
         return env
     return thunk()
 

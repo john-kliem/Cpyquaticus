@@ -7,7 +7,7 @@
 #include "heron.h"
 #include "actual_pos.h"
 #include "flag.h"
-#include "render_test.h"
+// #include "render_test.h"
 #include "rewards.h"
 #include <unistd.h>
 #include <time.h>
@@ -437,33 +437,34 @@ int main(int argc, char* argv[]) {
     settings * game = create_game(field_width, field_height, num_agents, 2, num_steps,1);
     episode * e = create_episode(game);
     if (render){
-        InitWindow(1200, 600, "C Maritime Capture the Flag");
-        SetTargetFPS(60);
-        initialize_game_starts(game, e);
-        for (int i = 0; i < num_steps; i++){
-            BeginDrawing();
-            ClearBackground(BLACK);
-            int actions[2] = {2,17};//get_random_value(0,17)};
+	int x = 1;
+        //InitWindow(1200, 600, "C Maritime Capture the Flag");
+        //SetTargetFPS(60);
+        //initialize_game_starts(game, e);
+        //for (int i = 0; i < num_steps; i++){
+          //  BeginDrawing();
+           // ClearBackground(BLACK);
+            //int actions[2] = {2,17};//get_random_value(0,17)};
 
             //int actions[2] = {4,4};
-            for (int x = 0; x < num_agents; x++){
-                drawPlayer(e->agents[x], field_width, field_height, 1200, 600);
-            }
-            for (int x = 0; x < 2; x++){
-                drawFlag(game->flags[x], field_width, field_height, 1200, 600);
-            }
-            drawFieldLines(field_width, field_height, 1200, 600);
-            EndDrawing();
-            sleep(0.10);
-            step(game, e, actions);
+            //for (int x = 0; x < num_agents; x++){
+             //   drawPlayer(e->agents[x], field_width, field_height, 1200, 600);
+            //}
+            //for (int x = 0; x < 2; x++){
+             //   drawFlag(game->flags[x], field_width, field_height, 1200, 600);
+            //}
+            //drawFieldLines(field_width, field_height, 1200, 600);
+            //EndDrawing();
+            //sleep(0.10);
+            //step(game, e, actions);
             // for(int ff = 0; ff < game->num_agents; ff++){
             //     printf("Agent ID: %d Tag Penalty: %d OOB: %d\n",ff, e->rewards[ff]->tag,e->rewards[ff]->oob);
             // }
             //Update all agents 
             //Check for game events
             //Save new observations
-        }
-        CloseWindow();
+       // }
+        //CloseWindow();
     }
     else{
         for(int x = 0; x < 10000; x++){
