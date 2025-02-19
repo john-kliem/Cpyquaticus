@@ -1,13 +1,53 @@
+import time
+import argparse
+import gymnasium as gym
+import numpy as np
+import os
+import logging
+import os
+import random
+import time
+from dataclasses import dataclass
+import gymnasium as gym
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import tyro
+from torch.distributions.categorical import Categorical
+from torch.utils.tensorboard import SummaryWriter
+import sys
+from multi_env.dict_based_sequential import SequentialMultiEnv
+from algos.clean_ppo import PPO, PPOAgent, PPOArgs
+from cpyquaticus.envs.c_pyquaticus import Cpyquaticus
+from cpyquaticus.base_policies.BasePolicies import DoNothing, Random
+import random
+
+from .petting_zoo_env import make_cpyquaticus_env
+
+#Given a path to a cleanRL nn file load in the agent
+def get_agent(path):
+    algo = None
+    if "ppo" in path:
+        #Load in PPO NN Algorithm
+        
+    elif "dqn" in path:
+        #Load in DQN NN Algorithm
+        #TODO add DQN Support
+        return None
+    return algo
+
 class MCTFLeague:
-    def __init__(self, num_main=1, num_exploiters=1):
+    def __init__(self, num_main=1):
+        #TODO: Reevaluate for inclusion of multi-agent teams
         self.num_main = num_main
-        self.num_exploiters = num_exploiters
+        self.num_exploiters = num_main#num_exploiters
 
         self.main_red = [None for i in range(num_main)]
         self.main_elos = [500 for i in range(num_main)]
 
-        self.exploiters_red = [None for i in range(num_exploiters]
-        self.exploiters_red_elos = [500 for i in range(num_exploiters)]
+        self.exploiters_red = [None for i in range(self.num_exploiters]
+        self.exploiters_red_elos = [500 for i in range(self.num_exploiters)]
 
         self.prev_reds = []
         self.prev_reds_elos = []
@@ -26,37 +66,55 @@ class MCTFLeague:
         self.selfplay_loops = 0
     def train(self, selfplay_loops=1):
         for loop in range(selfplay_loops):
-            #Main Agents
-            #Train Main Blue
-            for mb in range(len(self.main_blue)):
+            #Train Main Agents
+            for ma in range(len(self.num_main)):
                 #Select Red Agents to train against if any
-                b_algo = get_platform_algo(self.main_blue[mb], None)
-                self.main_blue[mb] = self._train_blue(b_algo)
-            #Train Main Red
-            for mr in range(len(self.main_red)):
-                #Select Red Agents to train against if any
-                r_algo = get_platform_algo(self.main_red[mr], None)
-                self.main_blue[mr] = self._train_red(r_algo)
+                opponents = {'agents':[], 'percentages':[]}
+                #Train Main Blue Agent
+                if self.main_blue[ma] == None:
+                    #Initialize Main agent
+                    opponents = {'agents':[get_algo('DoNothing', None),], 'percentages':[1.0,]}
+                else:
+                    #Assign Opponents
+                    opponents = {'agents':[get_algo(self.main_red[ma], 'ppo'), get_algo(self.exploiter_red[ma],'ppo'), get_algo(self.prev_reds[random.randint(0,len(self.prev_reds))], 'ppo')], 'percentages':[0.6, 0.25, 0.15]}
+                algo = get_agent(self.main_blue[ma], 'ppo')
+                self.main_blue[ma] = self._train('main_blue_'+str(ma),algo, opponents)
+                #Train Main Red Agent
+                if self.main_red[ma] == None:
+                    opponents = {'agents':[get_algo('DoNothing', None),], 'percentages':[1.0,]}
+                else:
+                    opponents = {'agents':[get_algo(self.main_blue[ma], 'ppo'), get_algo(self.exploiter_blue[ma], 'ppo'), get_algo(self.prev_blues[random.randint(0,len(self.prev_blues))], 'ppo')], 'percentages':[0.6, 0.25, 0.15]}
+                algo = get_agent(self.main_red[ma], 'ppo')
+                
+                    #Assign Opponents
+                self.main_red[ma] = self._train('main_red_'+str(ma), algo, opponents)
 
-            #Main Agent Exploiters
-            #Train Blue Exploiter
-            for eb in range(len(self.exploiters_blue)):
-                #Select Red Agents to train against if any
-                b_algo = get_platform_algo(None, self.main_agents)
-                self.exploiters_red[eb] = self._train_red(b_algo)
-                self.exploiters_blue_elos[eb] = 500
-            #Train Red Exploiter
-            for er in range(len(self.exploiters_red)):
-                #Select Red Agents to train against if any
-                r_algo = get_platform_algo(None, self.main_agents)
-                self.exploiters_red[er] = self._train_red(r_algo)
-                self.exploiters_red_elos[er] = 500
-
+                #Train Blue Exploiter
+                opponents = {'agents':[get_algo(self.main_blue[ma]),], 'percentages':[1.0,]}
+                self.exploiter_blue[ma] = self._train('blue_exploiter_'+str(ma),get_algo(None, 'ppo'), opponents, steps=25000000)
+                #Train Red Exploiter
+                opponents = {'agents':[get_algo(self.main_red[ma]),], 'percentages':[1.0,]}
+                self.exploiter_red[ma] = self._train('red_exploiter_'+str(ma),get_algo(None, 'ppo'), opponents, steps=25000000)
+                
             #Evaluate and update elo scores for all agents
-            for mb in range(len(self.main_blue)):
-                #Eval Latest Red Main
-                #Eval Blue Exploiter
-                rew = self._run_blue_game(
+                    
         return
- 
+    def _train(self,name, algo, opponents_dict, steps=1000000, num_envs=100):
+        #Split the number of agents based on the rollout sizes
+        #TODO: Make this configurable
+        #Slightly modified cleanRL training loop
+        indicies = []
+        for i, percent in enumerate(opponents_dict['percentages']):
+            if i == 0:
+                indicies.append([:int(num_envs*percent)])
+            else:
+                indicies.append([int(num_envs*opponents_dict['percentages'][i-1]):int(num_envs*percent)])
+
+        
+
+        #Save Current Model
+        path = f'./Leauge/{name}_{self.seflplay_loop}.pt'
+        algo.save(path)
+        #Save NN checkpoint path
+        return path
 
