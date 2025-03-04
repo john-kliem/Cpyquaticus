@@ -24,7 +24,7 @@ class DoNothing:
     def get_value(self, x):
         return None
     def get_action_and_value(self, obs, action=None):
-        return torch.ones((obs.shape[0])) * 17
+        return torch.ones((obs.shape[0])) * 17, None, None, None
     def get_action_and_value_train(self, obs, done, action=None):
         return self.get_action_and_value(obs, action), None, None, None
     def set_reward(self, reward):
@@ -52,7 +52,7 @@ class Random:
         actions = torch.ones((obs.shape[0])) 
         for a in range(rows):
             actions[r] = actions[r] * self.action_space.sample()
-        return actions
+        return actions, None, None, None
     def get_action_and_value_train(self, obs, done, action=None):
         return self.get_action_and_value(obs, action), None, None, None
     def set_reward(self, reward):

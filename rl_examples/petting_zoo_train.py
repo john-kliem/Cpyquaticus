@@ -157,7 +157,6 @@ if __name__ == "__main__":
         for a in agents:
             agents[a].anneal_lr(iteration, args.num_iterations)
             
-
         for step in range(0, args.num_steps):
             global_step += args.num_envs
             # obs[step] = next_obs
@@ -180,6 +179,7 @@ if __name__ == "__main__":
                 actions = action
             else:
                 actions = torch.stack(agent_actions).T
+
 
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminations, truncations, infos = envs.step(actions.cpu().numpy())
@@ -204,14 +204,11 @@ if __name__ == "__main__":
                     if isinstance(envs, gym.vector.SyncVectorEnv):
                         for info in infos['final_info']:
                             if info and 'episode' in info:
-                                # print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
                                 summary_writers[a].add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                                 summary_writers[a].add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
                     else:
-                        # print(f"global_step={global_step}, episodic_return={avg_agent_return}")
                         summary_writers[a].add_scalar("charts/episodic_return", avg_agent_return, global_step)
                     # writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
-
         # bootstrap value if not done
         for a in args.to_train:
             #TODO: Grab only specific agent next obs and next done
